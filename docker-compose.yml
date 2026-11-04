@@ -41,16 +41,16 @@ services:
     restart: unless-stopped
     init: true
     ports:
-      - "${API_PORT:-8080}:8080"
+      - "${API_PORT:-3000}:3000"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-kgm}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-kgm}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-kgm}
-      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
-      MAVEN_OPTS: -Dmaven.repo.local=/root/.m2/repository
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kgm}:${POSTGRES_PASSWORD:-kgm}@db:5432/${POSTGRES_DB:-kgm}?schema=public
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     volumes:
       - .:/app
-      - kgm-maven-repo:/root/.m2
+      - /app/node_modules
+      - /app/src/generated
     depends_on:
       db:
         condition: service_healthy
@@ -65,7 +65,7 @@ services:
     ports:
       - "${APP_PORT:-5173}:5173"
     environment:
-      VITE_API_URL: http://localhost:${API_PORT:-8080}
+      VITE_API_URL: http://localhost:${API_PORT:-3000}
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ../kgm-app:/app
@@ -75,5 +75,4 @@ services:
 
 volumes:
   kgm-db-data:
-  kgm-maven-repo:
   kgm-app-node-modules:
