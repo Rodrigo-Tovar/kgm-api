@@ -1,0 +1,270 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Administrador {
+  id        Int       @id @default(autoincrement())
+  escuelaId Int       @map("escuelaid")
+  usuarioId Int       @unique @map("usuarioid")
+  nombre    String    @db.VarChar(255)
+  telefono  String?   @db.VarChar(50)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  escuela   Escuela   @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("administrador")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Alumno {
+  id                  Int                  @id @default(autoincrement())
+  escuelaId           Int                  @map("escuelaid")
+  matricula           String               @unique @db.VarChar(50)
+  curp                String               @unique @db.VarChar(18)
+  nombre              String               @db.VarChar(100)
+  apellidoPaterno     String               @map("apellidopaterno") @db.VarChar(100)
+  apellidoMaterno     String?              @map("apellidomaterno") @db.VarChar(100)
+  fechaNacimiento     DateTime             @map("fechanacimiento") @db.Date
+  nacionalidad        String?              @db.VarChar(50)
+  genero              String?              @db.VarChar(50)
+  direccion           String?
+  createdAt           DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
+  escuela             Escuela              @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  alumnogrupo         AlumnoGrupo[]
+  alumnotutor         AlumnoTutor[]
+  calificacion        Calificacion[]
+  expedienteacademico ExpedienteAcademico?
+
+  @@map("alumno")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AlumnoGrupo {
+  id        Int          @id @default(autoincrement())
+  escuelaId Int          @map("escuelaid")
+  alumnoId  Int          @map("alumnoid")
+  grupoId   Int          @map("grupoid")
+  cicloId   Int          @map("cicloid")
+  activo    Boolean?     @default(true)
+  createdAt DateTime?    @default(now()) @map("created_at") @db.Timestamptz(6)
+  alumno    Alumno       @relation(fields: [alumnoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ciclo     CicloEscolar @relation(fields: [cicloId], references: [id], onUpdate: NoAction)
+  escuela   Escuela      @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  grupo     Grupo        @relation(fields: [grupoId], references: [id], onUpdate: NoAction)
+
+  @@unique([alumnoId, cicloId])
+  @@map("alumnogrupo")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AlumnoTutor {
+  id          Int       @id @default(autoincrement())
+  escuelaId   Int       @map("escuelaid")
+  alumnoId    Int       @map("alumnoid")
+  tutorId     Int       @map("tutorid")
+  esPrincipal Boolean?  @default(false) @map("es_principal")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  alumno      Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  escuela     Escuela   @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tutor       Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([alumnoId, tutorId])
+  @@map("alumnotutor")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AsignacionAcademica {
+  id           Int            @id @default(autoincrement())
+  escuelaId    Int            @map("escuelaid")
+  cicloId      Int            @map("cicloid")
+  grupoId      Int            @map("grupoid")
+  materiaId    Int            @map("materiaid")
+  docenteId    Int            @map("docenteid")
+  activo       Boolean?       @default(true)
+  createdAt    DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  ciclo        CicloEscolar   @relation(fields: [cicloId], references: [id], onUpdate: NoAction)
+  docente      Docente        @relation(fields: [docenteId], references: [id], onUpdate: NoAction)
+  escuela      Escuela        @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  grupo        Grupo          @relation(fields: [grupoId], references: [id], onUpdate: NoAction)
+  materia      Materia        @relation(fields: [materiaId], references: [id], onUpdate: NoAction)
+  calificacion Calificacion[]
+
+  @@map("asignacionacademica")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Calificacion {
+  id                    Int                 @id @default(autoincrement())
+  escuelaId             Int                 @map("escuelaid")
+  asignacionAcademicaId Int                 @map("asignacionacademicaid")
+  alumnoId              Int                 @map("alumnoid")
+  periodo               String              @db.VarChar(50)
+  valor                 Decimal             @db.Decimal(4, 2)
+  fechaRegistro         DateTime?           @default(now()) @map("fecharegistro") @db.Timestamptz(6)
+  alumno                Alumno              @relation(fields: [alumnoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  asignacionAcademica   AsignacionAcademica @relation(fields: [asignacionAcademicaId], references: [id], onUpdate: NoAction)
+  escuela               Escuela             @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([asignacionAcademicaId, alumnoId, periodo])
+  @@map("calificacion")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model CicloEscolar {
+  id                  Int                   @id @default(autoincrement())
+  escuelaId           Int                   @map("escuelaid")
+  fechaInicio         DateTime              @map("fechainicio") @db.Date
+  fechaFin            DateTime              @map("fechafin") @db.Date
+  nombre              String?               @db.VarChar(100)
+  createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  alumnogrupo         AlumnoGrupo[]
+  asignacionacademica AsignacionAcademica[]
+  escuela             Escuela               @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("cicloescolar")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Docente {
+  id                  Int                   @id @default(autoincrement())
+  escuelaId           Int                   @map("escuelaid")
+  usuarioId           Int?                  @unique @map("usuarioid")
+  curp                String                @unique @db.VarChar(18)
+  nombre              String                @db.VarChar(100)
+  apellidoPaterno     String                @map("apellidopaterno") @db.VarChar(100)
+  apellidoMaterno     String?               @map("apellidomaterno") @db.VarChar(100)
+  estado              String                @default("ACTIVO") @db.VarChar(50)
+  createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  asignacionacademica AsignacionAcademica[]
+  escuela             Escuela               @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario             Usuario?              @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("docente")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Escuela {
+  id                  Int                   @id @default(autoincrement())
+  nombre              String                @db.VarChar(255)
+  clave               String                @db.VarChar(100)
+  createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  administrador       Administrador[]
+  alumno              Alumno[]
+  alumnogrupo         AlumnoGrupo[]
+  alumnotutor         AlumnoTutor[]
+  asignacionacademica AsignacionAcademica[]
+  calificacion        Calificacion[]
+  cicloescolar        CicloEscolar[]
+  docente             Docente[]
+  expedienteacademico ExpedienteAcademico[]
+  grado               Grado[]
+  grupo               Grupo[]
+  materia             Materia[]
+  tutor               Tutor[]
+  usuario             Usuario[]
+
+  @@map("escuela")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ExpedienteAcademico {
+  id             Int       @id @default(autoincrement())
+  escuelaId      Int       @map("escuelaid")
+  alumnoId       Int       @unique @map("alumnoid")
+  rutaArchivoPdf String?   @map("rutaarchivopdf")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  alumno         Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  escuela        Escuela   @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("expedienteacademico")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Grado {
+  id        Int       @id @default(autoincrement())
+  escuelaId Int       @map("escuelaid")
+  nombre    String    @db.VarChar(50)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  escuela   Escuela   @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  grupo     Grupo[]
+  materia   Materia[]
+
+  @@map("grado")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Grupo {
+  id                  Int                   @id @default(autoincrement())
+  escuelaId           Int                   @map("escuelaid")
+  gradoId             Int                   @map("gradoid")
+  nombre              String                @db.VarChar(50)
+  createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  alumnogrupo         AlumnoGrupo[]
+  asignacionacademica AsignacionAcademica[]
+  escuela             Escuela               @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  grado               Grado                 @relation(fields: [gradoId], references: [id], onUpdate: NoAction)
+
+  @@map("grupo")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Materia {
+  id                  Int                   @id @default(autoincrement())
+  escuelaId           Int                   @map("escuelaid")
+  gradoId             Int                   @map("gradoid")
+  nombre              String                @db.VarChar(150)
+  createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  asignacionacademica AsignacionAcademica[]
+  escuela             Escuela               @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  grado               Grado                 @relation(fields: [gradoId], references: [id], onUpdate: NoAction)
+
+  @@map("materia")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Tutor {
+  id              Int           @id @default(autoincrement())
+  escuelaId       Int           @map("escuelaid")
+  usuarioId       Int?          @unique @map("usuarioid")
+  curp            String?       @unique @db.VarChar(18)
+  nombre          String        @db.VarChar(100)
+  apellidoPaterno String        @map("apellidopaterno") @db.VarChar(100)
+  apellidoMaterno String?       @map("apellidomaterno") @db.VarChar(100)
+  parentesco      String        @db.VarChar(50)
+  correo          String?       @db.VarChar(255)
+  telefono        String?       @db.VarChar(50)
+  direccion       String?
+  createdAt       DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
+  alumnotutor     AlumnoTutor[]
+  escuela         Escuela       @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario         Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("tutor")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Usuario {
+  id            Int            @id @default(autoincrement())
+  escuelaId     Int            @map("escuelaid")
+  email         String         @unique @db.VarChar(255)
+  password      String         @db.VarChar(255)
+  rol           String         @db.VarChar(50)
+  createdAt     DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  administrador Administrador?
+  docente       Docente?
+  tutor         Tutor?
+  escuela       Escuela        @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("usuario")
+}

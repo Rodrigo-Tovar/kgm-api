@@ -1,0 +1,78 @@
+name: kgm
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kgm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kgm}
+      POSTGRES_USER: ${POSTGRES_USER:-kgm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kgm}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - kgm-db-data:/var/lib/postgresql/data
+      - ./initial_schema.sql:/docker-entrypoint-initdb.d/01-initial_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  adminer:
+    image: adminer:latest
+    container_name: kgm-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: kgm-api
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kgm}:${POSTGRES_PASSWORD:-kgm}@db:5432/${POSTGRES_DB:-kgm}?schema=public
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/src/generated
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: ../kgm-app
+      dockerfile: Dockerfile.dev
+    container_name: kgm-app
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${APP_PORT:-5173}:5173"
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT:-3000}
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ../kgm-app:/app
+      - kgm-app-node-modules:/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  kgm-db-data:
+  kgm-app-node-modules:

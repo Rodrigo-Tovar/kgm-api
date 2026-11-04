@@ -3,4 +3,3 @@
 *.cmd text eol=crlf
 *.bat text eol=crlf
 *.docx binary
-*.jar binary
