@@ -1,18 +1,19 @@
-# Maven
-target/
-*.jar
-*.war
-*.class
+# Dependencias
+/node_modules
+
+# Compilacion
+/dist
+/coverage
+*.tsbuildinfo
+
+# Prisma Client generado
+/src/generated
 
 # IDE
 .idea/
 *.iml
 .vscode/
 .settings/
-.project
-.classpath
-.factorypath
-.apt_generated/
 *.swp
 
 # Logs y entorno local
@@ -30,3 +31,8 @@ desktop.ini
 # Documentos de trabajo locales
 *.docx
 ~$*
+
+# Herramientas de agentes
+/.agents
+
+/src/generated/prisma
