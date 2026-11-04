@@ -1,0 +1,10 @@
+FROM maven:3.9-eclipse-temurin-21
+
+WORKDIR /app
+
+COPY docker/api-dev.sh /usr/local/bin/api-dev.sh
+RUN chmod +x /usr/local/bin/api-dev.sh
+
+EXPOSE 8080
+
+CMD ["/bin/sh", "/usr/local/bin/api-dev.sh"]

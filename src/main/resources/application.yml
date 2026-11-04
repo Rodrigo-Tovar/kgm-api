@@ -1,6 +1,17 @@
 spring:
   application:
     name: kgm-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/kgm}
+    username: ${SPRING_DATASOURCE_USERNAME:kgm}
+    password: ${SPRING_DATASOURCE_PASSWORD:kgm}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
 
 server:
   port: 8080
