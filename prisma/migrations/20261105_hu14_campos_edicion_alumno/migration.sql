@@ -1,5 +1,3 @@
--- HU-1.4: campos necesarios para edición de alumno.
-
 ALTER TABLE public.alumno
   ADD COLUMN IF NOT EXISTS telefono VARCHAR(50),
   ADD COLUMN IF NOT EXISTS correo VARCHAR(255);
