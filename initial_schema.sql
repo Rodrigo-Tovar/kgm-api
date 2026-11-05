@@ -108,6 +108,8 @@ create table public.Alumno (
   nacionalidad VARCHAR(50),
   genero VARCHAR(50),
   direccion TEXT,
+  telefono VARCHAR(50),
+  correo VARCHAR(255),
   created_at timestamp with time zone default CURRENT_TIMESTAMP
 );
 
@@ -151,6 +153,9 @@ create table public.AlumnoGrupo (
   grupoId INT not null references public.Grupo (id) on delete RESTRICT,
   cicloId INT not null references public.CicloEscolar (id) on delete RESTRICT,
   activo BOOLEAN default true,
+  turno VARCHAR(50),
+  fechaIngreso DATE,
+  observaciones TEXT,
   created_at timestamp with time zone default CURRENT_TIMESTAMP,
   unique (alumnoId, cicloId) -- Un alumno no puede estar en dos grupos en el mismo ciclo
 );

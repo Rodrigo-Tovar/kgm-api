@@ -4,9 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
+import { AlumnosModule } from './alumnos/alumnos.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AlumnosModule],
   controllers: [AppController, HealthController],
   providers: [AppService],
 })
