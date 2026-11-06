@@ -16,6 +16,12 @@ export class CrearTutorDto {
   @Min(1)
   escuelaId!: number;
 
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  alumnoId?: number;
+
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsNotEmpty({ message: 'El nombre es obligatorio.' })
@@ -47,14 +53,15 @@ export class CrearTutorDto {
   telefono!: string;
 
   @IsEmail({}, { message: 'El correo electrónico no es válido.' })
+  @IsOptional()
   @MaxLength(255)
-  email!: string;
+  email?: string;
 
   @IsString()
-  @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsNotEmpty({ message: 'El parentesco es obligatorio.' })
   @MaxLength(50)
-  parentesco?: string;
+  parentesco!: string;
 
   @IsString()
   @IsOptional()

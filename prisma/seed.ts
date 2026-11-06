@@ -388,7 +388,12 @@ async function main() {
   for (const datos of tutoresSemilla) {
     const { matriculas, ...datosTutor } = datos;
     const existente = await prisma.tutor.findUnique({
-      where: { curp: datos.curp },
+      where: {
+        tutor_escuelaid_curp_key: {
+          escuelaId: escuelaDesarrollo.id,
+          curp: datos.curp,
+        },
+      },
     });
     const tutor = existente
       ? await prisma.tutor.update({
