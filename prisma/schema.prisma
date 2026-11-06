@@ -248,11 +248,11 @@ model Tutor {
   id              Int           @id @default(autoincrement())
   escuelaId       Int           @map("escuelaid")
   usuarioId       Int?          @unique @map("usuarioid")
-  curp            String?       @unique @db.VarChar(18)
+	curp            String?       @db.VarChar(18)
   nombre          String        @db.VarChar(100)
   apellidoPaterno String        @map("apellidopaterno") @db.VarChar(100)
   apellidoMaterno String?       @map("apellidomaterno") @db.VarChar(100)
-  parentesco      String        @db.VarChar(50)
+	parentesco      String?       @db.VarChar(50)
   correo          String?       @db.VarChar(255)
   telefono        String?       @db.VarChar(50)
   direccion       String?
@@ -261,6 +261,8 @@ model Tutor {
   escuela         Escuela       @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   usuario         Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+	@@unique([escuelaId, curp], name: "tutor_escuelaid_curp_key")
+  @@unique([escuelaId, correo], name: "tutor_escuelaid_correo_key")
   @@map("tutor")
 }
 
