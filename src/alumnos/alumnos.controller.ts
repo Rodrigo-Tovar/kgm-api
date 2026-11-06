@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Query } from '@nestjs/common';
 import { AlumnosService } from './alumnos.service';
 import { ActualizarAlumnoDto } from './dto/actualizar-alumno.dto';
 
@@ -6,6 +6,10 @@ import { ActualizarAlumnoDto } from './dto/actualizar-alumno.dto';
 export class AlumnosController {
   constructor(private readonly alumnosService: AlumnosService) {}
 
+  @Get()
+  listar(@Query('escuelaId', ParseIntPipe) escuelaId: number) {
+    return this.alumnosService.listar(escuelaId);
+  }
   @Get(':id')
   obtenerPorId(@Param('id', ParseIntPipe) id: number) {
     return this.alumnosService.obtenerPorId(id);
