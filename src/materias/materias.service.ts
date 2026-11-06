@@ -54,15 +54,18 @@ export class MateriasService {
 
   async crear(dto: CrearMateriaDto) {
     const nombre = dto.nombre.trim();
+    const clave = dto.clave.trim();
 
     await this.validarEscuela(dto.escuelaId);
     await this.validarGrado(dto.gradoId, dto.escuelaId);
     await this.validarNombreUnico(dto.escuelaId, dto.gradoId, nombre);
+    await this.validarClaveUnica(dto.escuelaId, clave);
 
     const materia = await this.prisma.materia.create({
       data: {
         escuelaId: dto.escuelaId,
         gradoId: dto.gradoId,
+        clave,
         nombre,
       },
       include: { grado: true },
@@ -80,7 +83,7 @@ export class MateriasService {
 
     const actual = await this.prisma.materia.findFirst({
       where: { id, escuelaId },
-      select: { id: true, gradoId: true, nombre: true },
+      select: { id: true, gradoId: true, clave: true, nombre: true },
     });
 
     if (!actual) {
@@ -89,6 +92,7 @@ export class MateriasService {
 
     const gradoId = dto.gradoId ?? actual.gradoId;
     const nombre = dto.nombre?.trim() ?? actual.nombre;
+    const clave = dto.clave?.trim() ?? actual.clave;
 
     if (dto.gradoId !== undefined && dto.gradoId !== actual.gradoId) {
       await this.validarGrado(gradoId, escuelaId);
@@ -98,10 +102,15 @@ export class MateriasService {
       await this.validarNombreUnico(escuelaId, gradoId, nombre, id);
     }
 
+    if (dto.clave !== undefined) {
+      await this.validarClaveUnica(escuelaId, clave, id);
+    }
+
     await this.prisma.materia.update({
       where: { id },
       data: {
         ...(dto.nombre !== undefined ? { nombre } : {}),
+        ...(dto.clave !== undefined ? { clave } : {}),
         ...(dto.gradoId !== undefined ? { gradoId } : {}),
       },
     });
@@ -183,12 +192,34 @@ export class MateriasService {
     }
   }
 
+  private async validarClaveUnica(
+    escuelaId: number,
+    clave: string,
+    excluirId?: number,
+  ) {
+    const duplicado = await this.prisma.materia.findFirst({
+      where: {
+        escuelaId,
+        clave: { equals: clave, mode: 'insensitive' },
+        ...(excluirId ? { id: { not: excluirId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (duplicado) {
+      throw new ConflictException(
+        'Ya existe una materia con esa clave en la escuela.',
+      );
+    }
+  }
+
   private mapearMateria(materia: MateriaConGrado) {
     return {
       id: materia.id,
       escuelaId: materia.escuelaId,
       gradoId: materia.gradoId,
       grado: materia.grado.nombre,
+      clave: materia.clave,
       nombre: materia.nombre,
       createdAt: materia.createdAt?.toISOString() ?? null,
     };

@@ -21,6 +21,12 @@ export class CrearMateriaDto {
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsNotEmpty()
+  @MaxLength(50)
+  clave!: string;
+
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsNotEmpty()
   @MaxLength(150)
   nombre!: string;
 }

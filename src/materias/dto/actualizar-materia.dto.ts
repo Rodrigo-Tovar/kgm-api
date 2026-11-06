@@ -19,6 +19,13 @@ export class ActualizarMateriaDto {
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsNotEmpty()
+  @MaxLength(50)
+  clave?: string;
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsNotEmpty()
   @MaxLength(150)
   nombre?: string;
 }

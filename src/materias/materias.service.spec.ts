@@ -14,6 +14,7 @@ describe('MateriasService', () => {
     id: 5,
     escuelaId: 1,
     gradoId: 2,
+    clave: 'ESP-001',
     nombre: 'Español',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     grado: { id: 2, nombre: '1ro' },
@@ -54,6 +55,7 @@ describe('MateriasService', () => {
           escuelaId: 1,
           gradoId: 2,
           grado: '1ro',
+          clave: 'ESP-001',
           nombre: 'Español',
           createdAt: '2026-01-01T00:00:00.000Z',
         },
@@ -96,14 +98,21 @@ describe('MateriasService', () => {
       const resultado = await service.crear({
         escuelaId: 1,
         gradoId: 2,
+        clave: '  ESP-001  ',
         nombre: '  Español  ',
       });
 
       expect(prisma.materia.create).toHaveBeenCalledWith({
-        data: { escuelaId: 1, gradoId: 2, nombre: 'Español' },
+        data: {
+          escuelaId: 1,
+          gradoId: 2,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        },
         include: { grado: true },
       });
       expect(resultado.nombre).toBe('Español');
+      expect(resultado.clave).toBe('ESP-001');
     });
 
     it('rechaza materias duplicadas en el mismo grado', async () => {
@@ -112,7 +121,30 @@ describe('MateriasService', () => {
       prisma.materia.findFirst.mockResolvedValue({ id: 9 });
 
       await expect(
-        service.crear({ escuelaId: 1, gradoId: 2, nombre: 'Español' }),
+        service.crear({
+          escuelaId: 1,
+          gradoId: 2,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.materia.create).not.toHaveBeenCalled();
+    });
+
+    it('rechaza claves duplicadas en la escuela', async () => {
+      prisma.escuela.findUnique.mockResolvedValue({ id: 1 });
+      prisma.grado.findFirst.mockResolvedValue({ id: 2 });
+      prisma.materia.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 9 });
+
+      await expect(
+        service.crear({
+          escuelaId: 1,
+          gradoId: 2,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        }),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.materia.create).not.toHaveBeenCalled();
     });
@@ -122,7 +154,12 @@ describe('MateriasService', () => {
       prisma.grado.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.crear({ escuelaId: 1, gradoId: 99, nombre: 'Español' }),
+        service.crear({
+          escuelaId: 1,
+          gradoId: 99,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.materia.create).not.toHaveBeenCalled();
     });
@@ -132,7 +169,12 @@ describe('MateriasService', () => {
     it('actualiza el nombre y devuelve la materia actualizada', async () => {
       prisma.escuela.findUnique.mockResolvedValue({ id: 1 });
       prisma.materia.findFirst
-        .mockResolvedValueOnce({ id: 5, gradoId: 2, nombre: 'Español' })
+        .mockResolvedValueOnce({
+          id: 5,
+          gradoId: 2,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({
           ...materiaBase,
@@ -151,11 +193,54 @@ describe('MateriasService', () => {
       expect(resultado.nombre).toBe('Lengua Española');
     });
 
+    it('actualiza la clave de la materia', async () => {
+      prisma.escuela.findUnique.mockResolvedValue({ id: 1 });
+      prisma.materia.findFirst
+        .mockResolvedValueOnce({
+          id: 5,
+          gradoId: 2,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        })
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({
+          ...materiaBase,
+          clave: 'ESP-010',
+        });
+      prisma.materia.update.mockResolvedValue({ id: 5 });
+
+      const resultado = await service.actualizar(5, 1, { clave: 'ESP-010' });
+
+      expect(prisma.materia.update).toHaveBeenCalledWith({
+        where: { id: 5 },
+        data: { clave: 'ESP-010' },
+      });
+      expect(resultado.clave).toBe('ESP-010');
+    });
+
+    it('rechaza una clave duplicada al actualizar', async () => {
+      prisma.escuela.findUnique.mockResolvedValue({ id: 1 });
+      prisma.materia.findFirst
+        .mockResolvedValueOnce({
+          id: 5,
+          gradoId: 2,
+          clave: 'ESP-001',
+          nombre: 'Español',
+        })
+        .mockResolvedValueOnce({ id: 9 });
+
+      await expect(
+        service.actualizar(5, 1, { clave: 'ESP-002' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prisma.materia.update).not.toHaveBeenCalled();
+    });
+
     it('valida el nuevo grado cuando cambia', async () => {
       prisma.escuela.findUnique.mockResolvedValue({ id: 1 });
       prisma.materia.findFirst.mockResolvedValue({
         id: 5,
         gradoId: 2,
+        clave: 'ESP-001',
         nombre: 'Español',
       });
       prisma.grado.findFirst.mockResolvedValue(null);
