@@ -78,6 +78,18 @@ Configura `ESCUELA_ID` con el ID resultante (normalmente `1` en una base vacía)
 
 Las fotos JPG, PNG y WebP de hasta 2 MB se guardan en el volumen Docker `kgm-api-uploads` y se sirven desde `/uploads`. La base guarda la ruta relativa del archivo.
 
+## Datos de desarrollo
+
+La seed crea o actualiza datos de demostración para la escuela `DEV-001`: ciclos, grados, grupos, materias, docentes, alumnos, tutores, inscripciones, asignaciones académicas, expedientes y calificaciones de dos bimestres. No crea usuarios ni contraseñas y no elimina registros.
+
+Con el stack levantado y el esquema actualizado, ejecútala manualmente:
+
+```bash
+docker compose exec api npm run prisma:seed
+```
+
+También se puede usar `npx prisma db seed`. La seed es idempotente: volver a correrla actualiza sus registros identificados para desarrollo en vez de duplicarlos. No la ejecutes contra una base con datos reales; es exclusivamente para desarrollo y demostración.
+
 ## Desarrollo local
 
 ```bash
