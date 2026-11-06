@@ -13,7 +13,6 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - kgm-db-data:/var/lib/postgresql/data
-      - ./initial_schema.sql:/docker-entrypoint-initdb.d/01-initial_schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
@@ -40,6 +39,7 @@ services:
     container_name: kgm-api
     restart: unless-stopped
     init: true
+    command: sh -c "npx prisma migrate deploy && npm run start:dev"
     ports:
       - "${API_PORT:-3000}:3000"
     environment:
@@ -51,6 +51,7 @@ services:
       - .:/app
       - /app/node_modules
       - /app/src/generated
+      - kgm-api-uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -66,6 +67,7 @@ services:
       - "${APP_PORT:-5173}:5173"
     environment:
       VITE_API_URL: http://localhost:${API_PORT:-3000}
+      VITE_ESCUELA_ID: ${ESCUELA_ID:-1}
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ../kgm-app:/app
@@ -76,3 +78,4 @@ services:
 volumes:
   kgm-db-data:
   kgm-app-node-modules:
+  kgm-api-uploads:

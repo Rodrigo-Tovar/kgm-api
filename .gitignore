@@ -8,6 +8,7 @@
 
 # Prisma Client generado
 /src/generated
+/uploads
 
 # IDE
 .idea/
@@ -36,3 +37,4 @@ desktop.ini
 /.agents
 
 /src/generated/prisma
+AGENTS.md

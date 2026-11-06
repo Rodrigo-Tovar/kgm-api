@@ -39,13 +39,24 @@ create table public.Docente (
   id SERIAL primary key,
   escuelaId INT not null references public.Escuela (id) on delete CASCADE,
   usuarioId INT unique references public.Usuario (id) on delete CASCADE, -- Opcional, por si el docente inicia sesión
-  curp VARCHAR(18) unique not null,
+  curp VARCHAR(18) not null,
   nombre VARCHAR(100) not null,
   apellidoPaterno VARCHAR(100) not null,
   apellidoMaterno VARCHAR(100),
+  fechaNacimiento DATE,
+  telefono VARCHAR(50),
+  correo VARCHAR(255),
+  direccion TEXT,
+  fotoUrl TEXT,
   estado VARCHAR(50) not null default 'ACTIVO',
   created_at timestamp with time zone default CURRENT_TIMESTAMP
 );
+
+create unique index docente_escuelaid_curp_key
+  on public.Docente (escuelaId, curp);
+
+create unique index docente_escuelaid_correo_key
+  on public.Docente (escuelaId, correo);
 
 -- =====================================================================================
 -- 4. ESTRUCTURA ACADÉMICA (HE-02)
@@ -108,6 +119,8 @@ create table public.Alumno (
   nacionalidad VARCHAR(50),
   genero VARCHAR(50),
   direccion TEXT,
+  telefono VARCHAR(50),
+  correo VARCHAR(255),
   created_at timestamp with time zone default CURRENT_TIMESTAMP
 );
 
@@ -151,6 +164,9 @@ create table public.AlumnoGrupo (
   grupoId INT not null references public.Grupo (id) on delete RESTRICT,
   cicloId INT not null references public.CicloEscolar (id) on delete RESTRICT,
   activo BOOLEAN default true,
+  turno VARCHAR(50),
+  fechaIngreso DATE,
+  observaciones TEXT,
   created_at timestamp with time zone default CURRENT_TIMESTAMP,
   unique (alumnoId, cicloId) -- Un alumno no puede estar en dos grupos en el mismo ciclo
 );
