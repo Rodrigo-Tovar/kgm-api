@@ -9,6 +9,7 @@ import { AlumnosModule } from './alumnos/alumnos.module';
 import { DocentesModule } from './docentes/docentes.module';
 import { TutoresModule } from './tutores/tutores.module';
 import { MateriasModule } from './materias/materias.module';
+import { DocumentosModule } from './documentos/documentos.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MateriasModule } from './materias/materias.module';
     DocentesModule,
     TutoresModule,
     MateriasModule,
+    DocumentosModule,
     ReportesModule,
   ],
   controllers: [AppController, HealthController],

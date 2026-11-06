@@ -39,7 +39,7 @@ services:
     container_name: kgm-api
     restart: unless-stopped
     init: true
-    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run start:dev"
+    command: sh -c "npx prisma generate && npm run start:dev"
     ports:
       - "${API_PORT:-3000}:3000"
     environment:
