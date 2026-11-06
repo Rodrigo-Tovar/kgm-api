@@ -1,8 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CrearAsignacionAlumnoDto } from './dto/crear-asignacion-alumno.dto';
 import { ActualizarAlumnoDto } from './dto/actualizar-alumno.dto';
+import { CrearAlumnoDto } from './dto/crear-alumno.dto';
 
 @Injectable()
 export class AlumnosService {
@@ -54,6 +55,89 @@ export class AlumnosService {
         estado: inscripcion ? 'Activo' : 'Sin asignación',
       };
     });
+  }
+  async crear(dto: CrearAlumnoDto) {
+    await this.validarEscuela(dto.escuelaId);
+
+    const existente = await this.prisma.alumno.findFirst({
+      where: {
+        OR: [
+          { matricula: dto.matricula },
+          { curp: dto.curp },
+        ],
+      },
+    });
+
+    if (existente) {
+      throw new ConflictException(
+        'Ya existe un alumno con esa matrícula o CURP.',
+      );
+    }
+
+    if ((dto.grupoId === undefined) !== (dto.cicloId === undefined)) {
+      throw new BadRequestException(
+        'Para registrar una inscripción se requieren grupoId y cicloId.',
+      );
+    }
+
+    if (dto.grupoId !== undefined && dto.cicloId !== undefined) {
+      const [grupo, ciclo] = await Promise.all([
+        this.prisma.grupo.findFirst({
+          where: {
+            id: dto.grupoId,
+            escuelaId: dto.escuelaId,
+          },
+        }),
+        this.prisma.cicloEscolar.findFirst({
+          where: {
+            id: dto.cicloId,
+            escuelaId: dto.escuelaId,
+          },
+        }),
+      ]);
+
+      if (!grupo || !ciclo) {
+        throw new BadRequestException(
+          'El grupo o ciclo escolar no pertenece a la escuela.',
+        );
+      }
+    }
+
+    const alumno = await this.prisma.$transaction(async (tx) => {
+      const nuevoAlumno = await tx.alumno.create({
+        data: {
+          escuelaId: dto.escuelaId,
+          matricula: dto.matricula.trim(),
+          curp: dto.curp.trim().toUpperCase(),
+          nombre: dto.nombre.trim(),
+          apellidoPaterno: dto.apellidoPaterno.trim(),
+          apellidoMaterno: dto.apellidoMaterno?.trim() || null,
+          fechaNacimiento: new Date(dto.fechaNacimiento),
+          nacionalidad: dto.nacionalidad ?? null,
+          genero: dto.genero ?? null,
+          direccion: dto.direccion ?? null,
+          telefono: dto.telefono ?? null,
+          correo: dto.correo ?? null,
+        },
+      });
+
+      if (dto.grupoId !== undefined && dto.cicloId !== undefined) {
+        await tx.alumnoGrupo.create({
+          data: {
+            escuelaId: dto.escuelaId,
+            alumnoId: nuevoAlumno.id,
+            grupoId: dto.grupoId,
+            cicloId: dto.cicloId,
+            activo: true,
+            fechaIngreso: new Date(),
+          },
+        });
+      }
+
+      return nuevoAlumno;
+    });
+
+    return this.obtenerPorId(alumno.id);
   }
   async obtenerPorId(id: number) {
     const alumno = await this.prisma.alumno.findUnique({
