@@ -8,6 +8,8 @@
 
 # Prisma Client generado
 /src/generated
+/uploads
+/prisma/migrations/
 
 # IDE
 .idea/
