@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AlumnosModule } from './alumnos/alumnos.module';
 import { DocentesModule } from './docentes/docentes.module';
 import { TutoresModule } from './tutores/tutores.module';
+import { MateriasModule } from './materias/materias.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TutoresModule } from './tutores/tutores.module';
     AlumnosModule,
     DocentesModule,
     TutoresModule,
+    MateriasModule,
     ReportesModule,
   ],
   controllers: [AppController, HealthController],

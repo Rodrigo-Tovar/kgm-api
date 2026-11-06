@@ -48,7 +48,6 @@ docker compose down -v
 docker compose up -d --build
 ```
 
-<<<<<<< Updated upstream
 > `docker compose down -v` elimina permanentemente los datos de la base y las fotos locales. No lo uses para aplicar cambios de esquema.
 
 ## Migraciones
@@ -90,9 +89,7 @@ docker compose exec api npm run prisma:seed
 ```
 
 También se puede usar `npx prisma db seed`. La seed es idempotente: volver a correrla actualiza sus registros identificados para desarrollo en vez de duplicarlos. No la ejecutes contra una base con datos reales; es exclusivamente para desarrollo y demostración.
-=======
 Si ya tienes un volumen creado con el antiguo `initial_schema.sql`, elimínalo con `docker compose down -v` o marca las migraciones existentes como aplicadas con `npx prisma migrate resolve` antes de desplegar.
->>>>>>> Stashed changes
 
 ## Desarrollo local
 
@@ -112,11 +109,7 @@ npm run start:dev
 
 ## Prisma
 
-<<<<<<< Updated upstream
-El esquema vive en `prisma/schema.prisma`; el cliente se genera en `src/generated/prisma` y no se versiona. Las nuevas modificaciones del esquema se registran en `prisma/migrations`; consulta la sección anterior para basar una base creada directamente desde SQL antes de desplegarlas.
-=======
 El esquema vive en `prisma/schema.prisma` y es la fuente de verdad. Los cambios se versionan como migraciones en `prisma/migrations`, que se aplican al iniciar el contenedor `api` o manualmente con `npm run prisma:deploy`. El cliente se genera en `src/generated/prisma` y no se versiona.
->>>>>>> Stashed changes
 
 ```bash
 npm run prisma:generate   # regenera el cliente
@@ -149,14 +142,8 @@ src/
     dto/
   generated/prisma/      # cliente generado (ignorado por git)
 prisma/
-<<<<<<< Updated upstream
-  schema.prisma          # modelos de Prisma
-  migrations/            # cambios versionados del esquema
-initial_schema.sql       # esquema inicial de PostgreSQL
-=======
   schema.prisma          # modelos y fuente de verdad del esquema
   migrations/            # migraciones versionadas
->>>>>>> Stashed changes
 ```
 
 ## Notas

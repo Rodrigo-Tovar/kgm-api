@@ -103,12 +103,19 @@ async function main() {
   const materiasPorGrado = new Map<string, Array<{ id: number }>>();
   const materiasPorClave = new Map<string, { id: number }>();
   const nombresMaterias = ['Español', 'Matemáticas', 'Ciencias Naturales'];
-  for (const nombreGrado of ['1ro', '2do', '3ro']) {
+  const prefijosMaterias: Record<string, string> = {
+    Español: 'ESP',
+    Matemáticas: 'MAT',
+    'Ciencias Naturales': 'CIE',
+  };
+  for (const [indiceGrado, nombreGrado] of ['1ro', '2do', '3ro'].entries()) {
     const grado = grados.get(nombreGrado);
     if (!grado) throw new Error(`No se encontró el grado ${nombreGrado}.`);
+    const numeroGrado = String(indiceGrado + 1).padStart(3, '0');
 
     const materias: Array<{ id: number }> = [];
     for (const nombre of nombresMaterias) {
+      const clave = `${prefijosMaterias[nombre] ?? 'MAT'}-${numeroGrado}`;
       const existente = await prisma.materia.findFirst({
         where: {
           escuelaId: escuelaDesarrollo.id,
@@ -119,10 +126,15 @@ async function main() {
       const materia = existente
         ? await prisma.materia.update({
             where: { id: existente.id },
-            data: { nombre },
+            data: { clave, nombre },
           })
         : await prisma.materia.create({
-            data: { escuelaId: escuelaDesarrollo.id, gradoId: grado.id, nombre },
+            data: {
+              escuelaId: escuelaDesarrollo.id,
+              gradoId: grado.id,
+              clave,
+              nombre,
+            },
           });
       materias.push(materia);
       materiasPorClave.set(`${nombreGrado}:${nombre}`, materia);
