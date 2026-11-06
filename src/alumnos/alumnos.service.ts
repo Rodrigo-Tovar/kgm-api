@@ -180,8 +180,18 @@ export class AlumnosService {
       );
     }
 
+    const grado = await this.prisma.grado.findFirst({
+      where: { id: dto.gradoId, escuelaId },
+      select: { id: true },
+    });
+    if (!grado) {
+      throw new NotFoundException(
+        `Grado con id ${dto.gradoId} no encontrado en la escuela`,
+      );
+    }
+
     const grupo = await this.prisma.grupo.findFirst({
-      where: { id: dto.grupoId, escuelaId },
+      where: { id: dto.grupoId, escuelaId, gradoId: dto.gradoId },
       include: { grado: { select: { escuelaId: true } } },
     });
     if (!grupo || grupo.grado.escuelaId !== escuelaId) {

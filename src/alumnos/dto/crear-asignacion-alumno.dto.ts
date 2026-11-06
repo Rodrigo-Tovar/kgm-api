@@ -16,6 +16,11 @@ export class CrearAsignacionAlumnoDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  gradoId!: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   grupoId!: number;
 
   @IsOptional()
