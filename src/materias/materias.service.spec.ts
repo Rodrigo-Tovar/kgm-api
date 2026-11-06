@@ -23,7 +23,7 @@ describe('MateriasService', () => {
   beforeEach(() => {
     prisma = {
       escuela: { findUnique: jest.fn() },
-      grado: { findFirst: jest.fn() },
+      grado: { findFirst: jest.fn(), findMany: jest.fn() },
       materia: {
         findMany: jest.fn(),
         findFirst: jest.fn(),
@@ -85,6 +85,30 @@ describe('MateriasService', () => {
       await expect(service.listar({ escuelaId: 99 })).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('obtenerOpciones', () => {
+    it('devuelve los grados de la escuela', async () => {
+      prisma.escuela.findUnique.mockResolvedValue({ id: 1 });
+      prisma.grado.findMany.mockResolvedValue([
+        { id: 1, nombre: 'Primero' },
+        { id: 2, nombre: 'Segundo' },
+      ]);
+
+      const resultado = await service.obtenerOpciones(1);
+
+      expect(prisma.grado.findMany).toHaveBeenCalledWith({
+        where: { escuelaId: 1 },
+        orderBy: { id: 'asc' },
+        select: { id: true, nombre: true },
+      });
+      expect(resultado).toEqual({
+        grados: [
+          { id: 1, nombre: 'Primero' },
+          { id: 2, nombre: 'Segundo' },
+        ],
+      });
     });
   });
 

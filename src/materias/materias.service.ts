@@ -37,6 +37,18 @@ export class MateriasService {
     return materias.map((materia) => this.mapearMateria(materia));
   }
 
+  async obtenerOpciones(escuelaId: number) {
+    await this.validarEscuela(escuelaId);
+
+    const grados = await this.prisma.grado.findMany({
+      where: { escuelaId },
+      orderBy: { id: 'asc' },
+      select: { id: true, nombre: true },
+    });
+
+    return { grados };
+  }
+
   async obtenerPorId(id: number, escuelaId: number) {
     await this.validarEscuela(escuelaId);
 

@@ -23,6 +23,11 @@ export class MateriasController {
     return this.materiasService.listar(query);
   }
 
+  @Get('opciones')
+  obtenerOpciones(@Query('escuelaId', ParseIntPipe) escuelaId: number) {
+    return this.materiasService.obtenerOpciones(escuelaId);
+  }
+
   @Get(':id')
   obtenerPorId(
     @Param('id', ParseIntPipe) id: number,
