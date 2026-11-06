@@ -41,13 +41,14 @@ docker compose up -d --build
 
 En Adminer usa: sistema `PostgreSQL`, servidor `db`, usuario `kgm`, contraseña `kgm`, base `kgm`.
 
-El esquema de `initial_schema.sql` se carga solo la primera vez que se crea el volumen. Para recrear la base desde cero:
+Las migraciones de Prisma se aplican automáticamente al iniciar el servicio `api`. Para recrear la base desde cero:
 
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
+<<<<<<< Updated upstream
 > `docker compose down -v` elimina permanentemente los datos de la base y las fotos locales. No lo uses para aplicar cambios de esquema.
 
 ## Migraciones
@@ -89,6 +90,9 @@ docker compose exec api npm run prisma:seed
 ```
 
 También se puede usar `npx prisma db seed`. La seed es idempotente: volver a correrla actualiza sus registros identificados para desarrollo en vez de duplicarlos. No la ejecutes contra una base con datos reales; es exclusivamente para desarrollo y demostración.
+=======
+Si ya tienes un volumen creado con el antiguo `initial_schema.sql`, elimínalo con `docker compose down -v` o marca las migraciones existentes como aplicadas con `npx prisma migrate resolve` antes de desplegar.
+>>>>>>> Stashed changes
 
 ## Desarrollo local
 
@@ -99,17 +103,25 @@ docker compose up -d db
 # 2. Dependencias (el postinstall genera el cliente de Prisma)
 npm ci
 
-# 3. API con recarga en caliente
+# 3. Aplicar migraciones pendientes
+npm run prisma:deploy
+
+# 4. API con recarga en caliente
 npm run start:dev
 ```
 
 ## Prisma
 
+<<<<<<< Updated upstream
 El esquema vive en `prisma/schema.prisma`; el cliente se genera en `src/generated/prisma` y no se versiona. Las nuevas modificaciones del esquema se registran en `prisma/migrations`; consulta la sección anterior para basar una base creada directamente desde SQL antes de desplegarlas.
+=======
+El esquema vive en `prisma/schema.prisma` y es la fuente de verdad. Los cambios se versionan como migraciones en `prisma/migrations`, que se aplican al iniciar el contenedor `api` o manualmente con `npm run prisma:deploy`. El cliente se genera en `src/generated/prisma` y no se versiona.
+>>>>>>> Stashed changes
 
 ```bash
 npm run prisma:generate   # regenera el cliente
-npm run prisma:pull       # reintrospecta la base (requiere que esté arriba)
+npm run prisma:migrate    # crea y aplica una migración en desarrollo
+npm run prisma:deploy     # aplica migraciones pendientes
 npm run prisma:studio     # abre Prisma Studio
 ```
 
@@ -137,12 +149,17 @@ src/
     dto/
   generated/prisma/      # cliente generado (ignorado por git)
 prisma/
+<<<<<<< Updated upstream
   schema.prisma          # modelos de Prisma
   migrations/            # cambios versionados del esquema
 initial_schema.sql       # esquema inicial de PostgreSQL
+=======
+  schema.prisma          # modelos y fuente de verdad del esquema
+  migrations/            # migraciones versionadas
+>>>>>>> Stashed changes
 ```
 
 ## Notas
 
-- Las tablas tienen RLS activado en `initial_schema.sql`, pero no hay políticas definidas. La API se conecta como dueño de las tablas (`kgm`), por lo que RLS no aplica; si se requiere aislamiento por escuela hay que añadir políticas y un rol sin privilegios de dueño.
-- Los `check` de `Calificacion.valor` y `Usuario.rol` existen en la base de datos, pero Prisma no los valida en el cliente: valida en los DTO con `class-validator`.
+- Las migraciones activan RLS en las tablas, pero no hay políticas definidas. La API se conecta como dueño de las tablas (`kgm`), por lo que RLS no aplica; si se requiere aislamiento por escuela hay que añadir políticas y un rol sin privilegios de dueño.
+- Las migraciones incluyen los `check` de `Calificacion.valor` y `Usuario.rol`, pero Prisma no los valida en el cliente: valida en los DTO con `class-validator`.
