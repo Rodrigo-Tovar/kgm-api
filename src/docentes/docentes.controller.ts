@@ -48,7 +48,8 @@ export class DocentesController {
     @Param('id', ParseIntPipe) id: number,
     @Query('escuelaId', ParseIntPipe) escuelaId: number,
     @Body() dto: ActualizarDocenteDto,
+    @UploadedFile() foto?: Express.Multer.File,
   ) {
-    return this.docentesService.actualizar(id, escuelaId, dto);
+    return this.docentesService.actualizar(id, escuelaId, dto, foto);
   }
 }

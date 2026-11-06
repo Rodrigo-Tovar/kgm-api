@@ -5,7 +5,6 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -30,10 +29,11 @@ export class CrearDocenteDto {
   @MaxLength(100)
   apellidoPaterno!: string;
 
-  @IsOptional()
   @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsNotEmpty()
   @MaxLength(100)
-  apellidoMaterno?: string;
+  apellidoMaterno!: string;
 
   @IsString()
   @Matches(/^[a-z0-9]{18}$/i)

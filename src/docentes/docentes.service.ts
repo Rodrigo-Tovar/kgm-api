@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { unlink } from 'node:fs/promises';
+import { join } from 'node:path';
 import { ActualizarDocenteDto } from './dto/actualizar-docente.dto';
 import { CrearDocenteDto } from './dto/crear-docente.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -130,60 +131,102 @@ export class DocentesService {
     id: number,
     escuelaId: number,
     dto: ActualizarDocenteDto,
+    foto?: Express.Multer.File,
   ) {
-    const actual = await this.prisma.docente.findFirst({
-      where: { id, escuelaId },
-      select: { id: true },
-    });
-    if (!actual) {
-      throw new NotFoundException(`Docente con id ${id} no encontrado`);
-    }
-
-    const curp = dto.curp?.trim().toUpperCase();
-    const correo = dto.correo?.trim().toLocaleLowerCase();
-    if (curp || correo) {
-      const duplicado = await this.prisma.docente.findFirst({
-        where: {
-          escuelaId,
-          id: { not: id },
-          OR: [
-            ...(curp ? [{ curp }] : []),
-            ...(correo ? [{ correo }] : []),
-          ],
-        },
-        select: { id: true },
+    let guardado = false;
+    let fotoAnterior: string | null = null;
+    try {
+      const actual = await this.prisma.docente.findFirst({
+        where: { id, escuelaId },
+        select: { id: true, fotoUrl: true },
       });
-      if (duplicado) {
+      if (!actual) {
+        throw new NotFoundException(`Docente con id ${id} no encontrado`);
+      }
+      fotoAnterior = actual.fotoUrl;
+
+      const curp = dto.curp?.trim().toUpperCase();
+      const correo = dto.correo?.trim().toLocaleLowerCase();
+      if (curp || correo) {
+        const duplicado = await this.prisma.docente.findFirst({
+          where: {
+            escuelaId,
+            id: { not: id },
+            OR: [
+              ...(curp ? [{ curp }] : []),
+              ...(correo ? [{ correo }] : []),
+            ],
+          },
+          select: { id: true },
+        });
+        if (duplicado) {
+          throw new ConflictException(
+            'Ya existe otro docente con esa CURP o correo en la escuela.',
+          );
+        }
+      }
+
+      await this.prisma.docente.update({
+        where: { id },
+        data: {
+          ...(dto.nombre !== undefined ? { nombre: dto.nombre.trim() } : {}),
+          ...(dto.apellidoPaterno !== undefined
+            ? { apellidoPaterno: dto.apellidoPaterno.trim() }
+            : {}),
+          ...(dto.apellidoMaterno !== undefined
+            ? { apellidoMaterno: dto.apellidoMaterno.trim() || null }
+            : {}),
+          ...(curp ? { curp } : {}),
+          ...(dto.fechaNacimiento
+            ? { fechaNacimiento: new Date(dto.fechaNacimiento) }
+            : {}),
+          ...(dto.estado ? { estado: normalizarEstado(dto.estado) } : {}),
+          ...(dto.telefono !== undefined
+            ? { telefono: dto.telefono.trim() }
+            : {}),
+          ...(correo ? { correo } : {}),
+          ...(dto.direccion !== undefined
+            ? { direccion: dto.direccion.trim() }
+            : {}),
+          ...(foto ? { fotoUrl: `/uploads/docentes/${foto.filename}` } : {}),
+        },
+      });
+      guardado = true;
+
+      if (foto && fotoAnterior) {
+        await this.eliminarFoto(fotoAnterior);
+      }
+      return this.obtenerPorId(id, escuelaId);
+    } catch (error) {
+      if (foto && !guardado) await unlink(foto.path);
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException(
           'Ya existe otro docente con esa CURP o correo en la escuela.',
         );
       }
+      throw error;
     }
+  }
 
-    await this.prisma.docente.update({
-      where: { id },
-      data: {
-        ...(dto.nombre !== undefined ? { nombre: dto.nombre.trim() } : {}),
-        ...(dto.apellidoPaterno !== undefined
-          ? { apellidoPaterno: dto.apellidoPaterno.trim() }
-          : {}),
-        ...(dto.apellidoMaterno !== undefined
-          ? { apellidoMaterno: dto.apellidoMaterno.trim() || null }
-          : {}),
-        ...(curp ? { curp } : {}),
-        ...(dto.fechaNacimiento
-          ? { fechaNacimiento: new Date(dto.fechaNacimiento) }
-          : {}),
-        ...(dto.estado ? { estado: normalizarEstado(dto.estado) } : {}),
-        ...(dto.telefono !== undefined ? { telefono: dto.telefono.trim() } : {}),
-        ...(correo ? { correo } : {}),
-        ...(dto.direccion !== undefined
-          ? { direccion: dto.direccion.trim() }
-          : {}),
-      },
-    });
-
-    return this.obtenerPorId(id, escuelaId);
+  private async eliminarFoto(ruta: string) {
+    const nombreArchivo = ruta.split('/').pop();
+    if (!nombreArchivo) return;
+    try {
+      await unlink(join(process.cwd(), 'uploads', 'docentes', nombreArchivo));
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      ) {
+        return;
+      }
+      throw error;
+    }
   }
 
   private async validarEscuela(escuelaId: number) {
