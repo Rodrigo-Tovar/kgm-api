@@ -7,7 +7,9 @@ import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AlumnosModule } from './alumnos/alumnos.module';
 import { DocentesModule } from './docentes/docentes.module';
+import { TutoresModule } from './tutores/tutores.module';
 import { MateriasModule } from './materias/materias.module';
+import { DocumentosModule } from './documentos/documentos.module';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { MateriasModule } from './materias/materias.module';
     PrismaModule,
     AlumnosModule,
     DocentesModule,
+    TutoresModule,
     MateriasModule,
+    DocumentosModule,
     ReportesModule,
   ],
   controllers: [AppController, HealthController],
