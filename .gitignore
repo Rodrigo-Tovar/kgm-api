@@ -38,3 +38,5 @@ desktop.ini
 
 /src/generated/prisma
 AGENTS.md
+cambios_api.diff
+*.diff
