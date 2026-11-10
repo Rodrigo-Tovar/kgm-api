@@ -1,13 +1,144 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CrearAsignacionAlumnoDto } from './dto/crear-asignacion-alumno.dto';
 import { ActualizarAlumnoDto } from './dto/actualizar-alumno.dto';
+import { CrearAlumnoDto } from './dto/crear-alumno.dto';
 
 @Injectable()
 export class AlumnosService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async listar(escuelaId: number) {
+    await this.validarEscuela(escuelaId);
+
+    const alumnos = await this.prisma.alumno.findMany({
+      where: { escuelaId },
+      include: {
+        alumnogrupo: {
+          where: { activo: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            grupo: { include: { grado: true } },
+            ciclo: true,
+          },
+        },
+      },
+      orderBy: [
+        { apellidoPaterno: 'asc' },
+        { apellidoMaterno: 'asc' },
+        { nombre: 'asc' },
+      ],
+    });
+
+    return alumnos.map((alumno) => {
+      const inscripcion = alumno.alumnogrupo[0] ?? null;
+
+      return {
+        id: alumno.id,
+        escuelaId: alumno.escuelaId,
+        matricula: alumno.matricula,
+        curp: alumno.curp,
+        nombre: alumno.nombre,
+        apellidoPaterno: alumno.apellidoPaterno,
+        apellidoMaterno: alumno.apellidoMaterno,
+        nombreCompleto: [
+          alumno.nombre,
+          alumno.apellidoPaterno,
+          alumno.apellidoMaterno,
+        ].filter(Boolean).join(' '),
+        grado: inscripcion?.grupo.grado.nombre ?? null,
+        grupo: inscripcion?.grupo.nombre ?? null,
+        cicloEscolar: inscripcion?.ciclo.nombre ?? null,
+        turno: inscripcion?.turno ?? null,
+        estado: inscripcion ? 'Activo' : 'Sin asignación',
+      };
+    });
+  }
+  async crear(dto: CrearAlumnoDto) {
+    await this.validarEscuela(dto.escuelaId);
+
+    const existente = await this.prisma.alumno.findFirst({
+      where: {
+        OR: [
+          { matricula: dto.matricula },
+          { curp: dto.curp },
+        ],
+      },
+    });
+
+    if (existente) {
+      throw new ConflictException(
+        'Ya existe un alumno con esa matrícula o CURP.',
+      );
+    }
+
+    if ((dto.grupoId === undefined) !== (dto.cicloId === undefined)) {
+      throw new BadRequestException(
+        'Para registrar una inscripción se requieren grupoId y cicloId.',
+      );
+    }
+
+    if (dto.grupoId !== undefined && dto.cicloId !== undefined) {
+      const [grupo, ciclo] = await Promise.all([
+        this.prisma.grupo.findFirst({
+          where: {
+            id: dto.grupoId,
+            escuelaId: dto.escuelaId,
+          },
+        }),
+        this.prisma.cicloEscolar.findFirst({
+          where: {
+            id: dto.cicloId,
+            escuelaId: dto.escuelaId,
+          },
+        }),
+      ]);
+
+      if (!grupo || !ciclo) {
+        throw new BadRequestException(
+          'El grupo o ciclo escolar no pertenece a la escuela.',
+        );
+      }
+    }
+
+    const alumno = await this.prisma.$transaction(async (tx) => {
+      const nuevoAlumno = await tx.alumno.create({
+        data: {
+          escuelaId: dto.escuelaId,
+          matricula: dto.matricula.trim(),
+          curp: dto.curp.trim().toUpperCase(),
+          nombre: dto.nombre.trim(),
+          apellidoPaterno: dto.apellidoPaterno.trim(),
+          apellidoMaterno: dto.apellidoMaterno?.trim() || null,
+          fechaNacimiento: new Date(dto.fechaNacimiento),
+          nacionalidad: dto.nacionalidad ?? null,
+          genero: dto.genero ?? null,
+          direccion: dto.direccion ?? null,
+          telefono: dto.telefono ?? null,
+          correo: dto.correo ?? null,
+        },
+      });
+
+      if (dto.grupoId !== undefined && dto.cicloId !== undefined) {
+        await tx.alumnoGrupo.create({
+          data: {
+            escuelaId: dto.escuelaId,
+            alumnoId: nuevoAlumno.id,
+            grupoId: dto.grupoId,
+            cicloId: dto.cicloId,
+            activo: true,
+            fechaIngreso: new Date(),
+          },
+        });
+      }
+
+      return nuevoAlumno;
+    });
+
+    return this.obtenerPorId(alumno.id);
+  }
   async obtenerPorId(id: number) {
     const alumno = await this.prisma.alumno.findUnique({
       where: { id },
@@ -104,7 +235,7 @@ export class AlumnosService {
         curp: alumno.curp,
         estado: asignaciones.some((asignacion) => asignacion.activo)
           ? 'Activo'
-          : 'Sin asignación',
+          : 'Sin asignaciÃ³n',
         asignaciones: asignaciones.map((asignacion) => ({
           cicloId: asignacion.cicloId,
           cicloEscolar:
@@ -211,8 +342,8 @@ export class AlumnosService {
     if (existente) {
       throw new ConflictException(
         existente.activo
-          ? `El alumno ya está asignado a ${existente.grupo.grado.nombre} ${existente.grupo.nombre} en ese ciclo escolar.`
-          : 'El alumno ya tiene un registro de asignación para ese ciclo escolar.',
+          ? `El alumno ya estÃ¡ asignado a ${existente.grupo.grado.nombre} ${existente.grupo.nombre} en ese ciclo escolar.`
+          : 'El alumno ya tiene un registro de asignaciÃ³n para ese ciclo escolar.',
       );
     }
 
@@ -234,7 +365,7 @@ export class AlumnosService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          'El alumno ya tiene una asignación registrada para ese ciclo escolar.',
+          'El alumno ya tiene una asignaciÃ³n registrada para ese ciclo escolar.',
         );
       }
       throw error;
@@ -244,7 +375,7 @@ export class AlumnosService {
     const alumnoActualizado = alumnos.find((item) => item.id === alumnoId);
     if (!alumnoActualizado) {
       throw new NotFoundException(
-        `Alumno con id ${alumnoId} no encontrado después de asignarlo`,
+        `Alumno con id ${alumnoId} no encontrado despuÃ©s de asignarlo`,
       );
     }
     return alumnoActualizado;
@@ -293,7 +424,7 @@ export class AlumnosService {
 
         if (!inscripcion) {
           throw new NotFoundException(
-            `El alumno con id ${id} no tiene una inscripción activa`,
+            `El alumno con id ${id} no tiene una inscripciÃ³n activa`,
           );
         }
 
