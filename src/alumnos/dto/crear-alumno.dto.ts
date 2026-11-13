@@ -69,6 +69,11 @@ export class CrearAlumnoDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  tutorId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   grupoId?: number;
 
   @IsOptional()

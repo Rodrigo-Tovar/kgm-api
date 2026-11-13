@@ -103,6 +103,22 @@ export class AlumnosService {
       }
     }
 
+    if (dto.tutorId !== undefined) {
+      const tutor = await this.prisma.tutor.findFirst({
+        where: {
+          id: dto.tutorId,
+          escuelaId: dto.escuelaId,
+        },
+        select: { id: true },
+      });
+
+      if (!tutor) {
+        throw new NotFoundException(
+          'El tutor seleccionado no existe en esta escuela.',
+        );
+      }
+    }
+
     const alumno = await this.prisma.$transaction(async (tx) => {
       const nuevoAlumno = await tx.alumno.create({
         data: {
@@ -130,6 +146,17 @@ export class AlumnosService {
             cicloId: dto.cicloId,
             activo: true,
             fechaIngreso: new Date(),
+          },
+        });
+      }
+
+      if (dto.tutorId !== undefined) {
+        await tx.alumnoTutor.create({
+          data: {
+            escuelaId: dto.escuelaId,
+            alumnoId: nuevoAlumno.id,
+            tutorId: dto.tutorId,
+            esPrincipal: true,
           },
         });
       }
