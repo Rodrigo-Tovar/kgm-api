@@ -4,5 +4,5 @@ ALTER TABLE public.tutor
 ALTER TABLE public.tutor
   DROP CONSTRAINT IF EXISTS tutor_curp_key;
 
-CREATE UNIQUE INDEX IF NOT EXISTS tutor_escuelaid_curp_key
-	ON public.tutor (escuelaid, curp);
+ALTER TABLE public.tutor
+  ADD CONSTRAINT tutor_escuelaid_curp_key UNIQUE (escuelaid, curp);

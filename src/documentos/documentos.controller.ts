@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Param,
@@ -47,5 +48,11 @@ export class DocumentosController {
     const documento = await this.documentosService.obtenerContenido(id, escuelaId);
     response.set({ 'Content-Type': documento.mimeType, 'Content-Disposition': `inline; filename="${documento.nombreArchivo}"` });
     response.send(documento.contenido);
+  }
+
+  @Delete(':id')
+  async eliminar(@Param('id', ParseIntPipe) id: number, @Query('escuelaId', ParseIntPipe) escuelaId: number) {
+    await this.documentosService.eliminar(id, escuelaId);
+    return { eliminado: true };
   }
 }

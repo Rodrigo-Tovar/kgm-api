@@ -53,6 +53,15 @@ export class DocumentosService {
     return documento;
   }
 
+  async eliminar(id: number, escuelaId: number) {
+    const resultado = await this.prisma.documentoAlumno.deleteMany({
+      where: { id, escuelaId },
+    });
+    if (resultado.count === 0) {
+      throw new NotFoundException('Documento no encontrado.');
+    }
+  }
+
   private async validarAlumno(alumnoId: number, escuelaId: number) {
     const alumno = await this.prisma.alumno.findFirst({
       where: { id: alumnoId, escuelaId },
