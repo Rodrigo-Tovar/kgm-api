@@ -104,6 +104,8 @@ model AsignacionAcademica {
   materia      Materia        @relation(fields: [materiaId], references: [id], onUpdate: NoAction)
   calificacion Calificacion[]
 
+  @@unique([escuelaId, cicloId, grupoId, materiaId], map: "asignacionacademica_escuelaid_cicloid_grupoid_materiaid_key")
+  @@index([docenteId])
   @@map("asignacionacademica")
 }
 

@@ -9,6 +9,7 @@ import { AlumnosModule } from './alumnos/alumnos.module';
 import { DocentesModule } from './docentes/docentes.module';
 import { TutoresModule } from './tutores/tutores.module';
 import { MateriasModule } from './materias/materias.module';
+import { AsignacionesAcademicasModule } from './asignaciones-academicas/asignaciones-academicas.module';
 import { DocumentosModule } from './documentos/documentos.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { DocumentosModule } from './documentos/documentos.module';
     DocentesModule,
     TutoresModule,
     MateriasModule,
+    AsignacionesAcademicasModule,
     DocumentosModule,
     ReportesModule,
   ],
