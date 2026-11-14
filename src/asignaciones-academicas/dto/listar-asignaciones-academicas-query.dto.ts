@@ -30,6 +30,12 @@ export class ListarAsignacionesAcademicasQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  gradoId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   materiaId?: number;
 
   @IsOptional()

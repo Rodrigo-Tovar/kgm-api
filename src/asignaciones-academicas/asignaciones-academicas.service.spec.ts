@@ -34,6 +34,8 @@ describe('AsignacionesAcademicasService', () => {
       nombre: 'Ana',
       apellidoPaterno: 'Pérez',
       apellidoMaterno: 'López',
+      curp: 'PELA900101MDFRNN01',
+      fotoUrl: '/uploads/docentes/ana.jpg',
     },
   };
 
@@ -51,6 +53,8 @@ describe('AsignacionesAcademicasService', () => {
     claveMateria: 'MAT-001',
     docenteId: 5,
     docente: 'Ana Pérez López',
+    docenteCurp: 'PELA900101MDFRNN01',
+    docenteFoto: '/uploads/docentes/ana.jpg',
     activo: true,
     createdAt: '2026-01-01T00:00:00.000Z',
   };
@@ -117,6 +121,7 @@ describe('AsignacionesAcademicasService', () => {
         escuelaId: 1,
         cicloId: 2,
         grupoId: 3,
+        gradoId: 6,
         materiaId: 4,
         docenteId: 5,
         activo: true,
@@ -129,6 +134,7 @@ describe('AsignacionesAcademicasService', () => {
           escuelaId: 1,
           cicloId: 2,
           grupoId: 3,
+          grupo: { gradoId: 6 },
           materiaId: 4,
           docenteId: 5,
           activo: true,
@@ -137,6 +143,11 @@ describe('AsignacionesAcademicasService', () => {
       expect(argumento.where.OR).toEqual(
         expect.arrayContaining([
           { materia: { nombre: { contains: 'mate', mode: 'insensitive' } } },
+          {
+            docente: {
+              curp: { contains: 'mate', mode: 'insensitive' },
+            },
+          },
         ]),
       );
     });
@@ -175,6 +186,7 @@ describe('AsignacionesAcademicasService', () => {
           apellidoPaterno: 'Pérez',
           apellidoMaterno: 'López',
           curp: 'PELA900101MDFRNN01',
+          fotoUrl: '/uploads/docentes/ana.jpg',
         },
       ]);
 
@@ -195,6 +207,7 @@ describe('AsignacionesAcademicasService', () => {
             id: 5,
             nombreCompleto: 'Ana Pérez López',
             curp: 'PELA900101MDFRNN01',
+            foto: '/uploads/docentes/ana.jpg',
           },
         ],
       });

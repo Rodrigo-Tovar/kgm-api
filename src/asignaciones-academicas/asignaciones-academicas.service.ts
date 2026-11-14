@@ -38,6 +38,7 @@ export class AsignacionesAcademicasService {
         escuelaId: query.escuelaId,
         ...(query.cicloId ? { cicloId: query.cicloId } : {}),
         ...(query.grupoId ? { grupoId: query.grupoId } : {}),
+        ...(query.gradoId ? { grupo: { gradoId: query.gradoId } } : {}),
         ...(query.materiaId ? { materiaId: query.materiaId } : {}),
         ...(query.docenteId ? { docenteId: query.docenteId } : {}),
         ...(query.activo !== undefined ? { activo: query.activo } : {}),
@@ -63,6 +64,11 @@ export class AsignacionesAcademicasService {
                       contains: busqueda,
                       mode: 'insensitive',
                     },
+                  },
+                },
+                {
+                  docente: {
+                    curp: { contains: busqueda, mode: 'insensitive' },
                   },
                 },
                 {
@@ -124,6 +130,7 @@ export class AsignacionesAcademicasService {
           apellidoPaterno: true,
           apellidoMaterno: true,
           curp: true,
+          fotoUrl: true,
         },
       }),
     ]);
@@ -146,6 +153,7 @@ export class AsignacionesAcademicasService {
           .filter(Boolean)
           .join(' '),
         curp: docente.curp,
+        foto: docente.fotoUrl,
       })),
     };
   }
@@ -458,6 +466,8 @@ export class AsignacionesAcademicasService {
       ]
         .filter(Boolean)
         .join(' '),
+      docenteCurp: asignacion.docente.curp,
+      docenteFoto: asignacion.docente.fotoUrl,
       activo: asignacion.activo ?? false,
       createdAt: asignacion.createdAt?.toISOString() ?? null,
     };
