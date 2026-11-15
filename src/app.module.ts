@@ -11,6 +11,7 @@ import { TutoresModule } from './tutores/tutores.module';
 import { MateriasModule } from './materias/materias.module';
 import { AsignacionesAcademicasModule } from './asignaciones-academicas/asignaciones-academicas.module';
 import { DocumentosModule } from './documentos/documentos.module';
+import { CiclosEscolaresModule } from './ciclos-escolares/ciclos-escolares.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DocumentosModule } from './documentos/documentos.module';
     AsignacionesAcademicasModule,
     DocumentosModule,
     ReportesModule,
+    CiclosEscolaresModule
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
