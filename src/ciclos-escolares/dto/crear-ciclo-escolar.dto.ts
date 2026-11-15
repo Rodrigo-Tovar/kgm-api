@@ -13,11 +13,4 @@ export class CrearCicloEscolarDto {
   @IsNotEmpty({ message: 'La fecha de fin es obligatoria.' })
   @IsDateString({}, { message: 'La fecha de fin debe tener formato de fecha válido (YYYY-MM-DD).' })
   fechaFin!: string;
-
-  @IsNotEmpty({ message: 'El estado es obligatorio.' })
-  @IsString()
-  @IsIn(['Activo', 'Cerrado', 'Programado'], {
-    message: 'El estado debe ser Activo, Cerrado o Programado.',
-  })
-  estado!: 'Activo' | 'Cerrado' | 'Programado';
 }

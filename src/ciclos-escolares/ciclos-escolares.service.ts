@@ -11,7 +11,6 @@ import { CrearCicloEscolarDto } from './dto/crear-ciclo-escolar.dto';
 export class CiclosEscolaresService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Consulta de ciclos por escuela (HU-2.1)
   async listar(escuelaId: number, estado?: string) {
     await this.validarEscuela(escuelaId);
 
@@ -24,11 +23,16 @@ export class CiclosEscolaresService {
     });
   }
 
-  // Crear ciclo escolar evitando duplicados y manejando el estado único Activo (HU-2.1)
+  // Crear ciclo escolar: forzado a 'Programado' y blindado contra solapamientos
   async crear(escuelaId: number, dto: CrearCicloEscolarDto) {
     await this.validarEscuela(escuelaId);
-    this.validarRangoFechas(dto.fechaInicio, dto.fechaFin);
 
+    const inicio = new Date(dto.fechaInicio);
+    const fin = new Date(dto.fechaFin);
+
+    this.validarRangoFechas(inicio, fin);
+
+    // 1. Validar duplicado por nombre
     const existeNombre = await this.prisma.cicloEscolar.findFirst({
       where: {
         escuelaId,
@@ -42,24 +46,33 @@ export class CiclosEscolaresService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      // Si el nuevo ciclo se crea como 'Activo', cerramos automáticamente los anteriores
-      if (dto.estado === 'Activo') {
-        await tx.cicloEscolar.updateMany({
-          where: { escuelaId, estado: 'Activo' },
-          data: { estado: 'Cerrado' },
-        });
-      }
+    // 2. Validar solapamiento (Overlap) de fechas con ciclos existentes
+    // Condición matemática de intersección de rangos: (InicioA <= FinB) Y (FinA >= InicioB)
+    const cicloSolapado = await this.prisma.cicloEscolar.findFirst({
+      where: {
+        escuelaId,
+        AND: [
+          { fechaInicio: { lte: fin } },
+          { fechaFin: { gte: inicio } },
+        ],
+      },
+    });
 
-      return tx.cicloEscolar.create({
-        data: {
-          escuelaId,
-          nombre: dto.nombre.trim(),
-          fechaInicio: new Date(dto.fechaInicio),
-          fechaFin: new Date(dto.fechaFin),
-          estado: dto.estado,
-        },
-      });
+    if (cicloSolapado) {
+      throw new ConflictException(
+        `Las fechas seleccionadas (${dto.fechaInicio} a ${dto.fechaFin}) se traslapan con el ciclo escolar existente "${cicloSolapado.nombre}".`,
+      );
+    }
+
+    // 3. Todo ciclo nuevo se crea por defecto como 'Programado'
+    return this.prisma.cicloEscolar.create({
+      data: {
+        escuelaId,
+        nombre: dto.nombre.trim(),
+        fechaInicio: inicio,
+        fechaFin: fin,
+        estado: 'Programado',
+      },
     });
   }
 
@@ -74,18 +87,66 @@ export class CiclosEscolaresService {
     }
   }
 
-  private validarRangoFechas(fechaInicioStr: string, fechaFinStr: string) {
-    const inicio = new Date(fechaInicioStr);
-    const fin = new Date(fechaFinStr);
+  private validarRangoFechas(inicio: Date, fin: Date) {
+  if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+    throw new BadRequestException('Las fechas proporcionadas no son válidas.');
+  }
 
-    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-      throw new BadRequestException('Las fechas proporcionadas no son válidas.');
-    }
+  // 1. Evitar crear ciclos cuya fecha de fin ya haya pasado
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0); // Normalizamos a medianoche para comparar solo fechas de calendario
 
-    if (inicio >= fin) {
-      throw new BadRequestException(
-        'La fecha de inicio debe ser estrictamente anterior a la fecha de fin.',
-      );
-    }
+  if (fin < hoy) {
+    throw new BadRequestException(
+      'No se puede registrar un ciclo escolar cuya fecha de finalización sea anterior a la fecha actual.',
+    );
+  }
+
+  // 2. La fecha de inicio debe ser estrictamente anterior a la fecha de fin
+  if (inicio >= fin) {
+    throw new BadRequestException(
+      'La fecha de inicio debe ser estrictamente anterior a la fecha de fin.',
+    );
+  }
+
+  // 3. Duración mínima razonable de 30 días
+  const diasDiferencia = (fin.getTime() - inicio.getTime()) / (1000 * 3600 * 24);
+  if (diasDiferencia < 30) {
+    throw new BadRequestException(
+      'Un ciclo escolar debe durar al menos 30 días.',
+    );
   }
 }
+
+  async cambiarEstado(escuelaId: number, cicloId: number, nuevoEstado: string) {
+  await this.validarEscuela(escuelaId);
+
+  const ciclo = await this.prisma.cicloEscolar.findFirst({
+    where: { id: cicloId, escuelaId },
+  });
+
+  if (!ciclo) {
+    throw new NotFoundException(`Ciclo escolar con ID ${cicloId} no encontrado en esta escuela.`);
+  }
+
+  return this.prisma.$transaction(async (tx) => {
+    // Si el nuevo estado es 'Activo', cerramos cualquier otro ciclo que estuviera 'Activo'
+    if (nuevoEstado === 'Activo') {
+      await tx.cicloEscolar.updateMany({
+        where: {
+          escuelaId,
+          estado: 'Activo',
+          id: { not: cicloId }, // Excepto el que estamos activando
+        },
+        data: { estado: 'Cerrado' },
+      });
+    }
+
+    return tx.cicloEscolar.update({
+      where: { id: cicloId },
+      data: { estado: nuevoEstado },
+    });
+  });
+}
+}
+
