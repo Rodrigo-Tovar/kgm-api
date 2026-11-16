@@ -9,7 +9,9 @@ import { AlumnosModule } from './alumnos/alumnos.module';
 import { DocentesModule } from './docentes/docentes.module';
 import { TutoresModule } from './tutores/tutores.module';
 import { MateriasModule } from './materias/materias.module';
+import { AsignacionesAcademicasModule } from './asignaciones-academicas/asignaciones-academicas.module';
 import { DocumentosModule } from './documentos/documentos.module';
+import { CiclosEscolaresModule } from './ciclos-escolares/ciclos-escolares.module';
 
 @Module({
   imports: [
@@ -19,8 +21,10 @@ import { DocumentosModule } from './documentos/documentos.module';
     DocentesModule,
     TutoresModule,
     MateriasModule,
+    AsignacionesAcademicasModule,
     DocumentosModule,
     ReportesModule,
+    CiclosEscolaresModule
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

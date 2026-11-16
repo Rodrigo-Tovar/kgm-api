@@ -384,7 +384,13 @@ export class AlumnosService {
   async actualizar(id: number, dto: ActualizarAlumnoDto) {
     const existe = await this.prisma.alumno.findUnique({
       where: { id },
-      select: { id: true },
+      include: {
+        alumnogrupo: {
+          where: { activo: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
     if (!existe) {
@@ -399,13 +405,68 @@ export class AlumnosService {
       ...datosAlumno
     } = dto;
 
+    const hoy = new Date();
+    hoy.setUTCHours(0, 0, 0, 0);
+
+    const fechaNacimientoFinal = fechaNacimiento
+      ? new Date(fechaNacimiento)
+      : existe.fechaNacimiento;
+
+    if (Number.isNaN(fechaNacimientoFinal.getTime())) {
+      throw new BadRequestException('La fecha de nacimiento no es válida.');
+    }
+
+    if (fechaNacimientoFinal >= hoy) {
+      throw new BadRequestException(
+        'La fecha de nacimiento debe ser anterior a hoy.',
+      );
+    }
+
+    const inscripcionActual = existe.alumnogrupo[0] ?? null;
+
+    if (inscripcionActual) {
+      const turnoFinal = turno ?? inscripcionActual.turno;
+
+      if (!turnoFinal) {
+        throw new BadRequestException(
+          'El turno es obligatorio para un alumno con inscripción activa.',
+        );
+      }
+
+      if (!['Matutino', 'Vespertino'].includes(turnoFinal)) {
+        throw new BadRequestException('El turno seleccionado no es válido.');
+      }
+
+      const fechaIngresoFinal = fechaIngreso
+        ? new Date(fechaIngreso)
+        : inscripcionActual.fechaIngreso;
+
+      if (fechaIngresoFinal) {
+        if (Number.isNaN(fechaIngresoFinal.getTime())) {
+          throw new BadRequestException('La fecha de ingreso no es válida.');
+        }
+
+        if (fechaIngresoFinal > hoy) {
+          throw new BadRequestException(
+            'La fecha de ingreso no puede ser futura.',
+          );
+        }
+
+        if (fechaIngresoFinal < fechaNacimientoFinal) {
+          throw new BadRequestException(
+            'La fecha de ingreso no puede ser anterior a la fecha de nacimiento.',
+          );
+        }
+      }
+    }
+
     await this.prisma.$transaction(async (tx) => {
       await tx.alumno.update({
         where: { id },
         data: {
           ...datosAlumno,
           ...(fechaNacimiento
-            ? { fechaNacimiento: new Date(fechaNacimiento) }
+            ? { fechaNacimiento: fechaNacimientoFinal }
             : {}),
         },
       });
@@ -416,20 +477,14 @@ export class AlumnosService {
         observaciones !== undefined;
 
       if (actualizaInscripcion) {
-        const inscripcion = await tx.alumnoGrupo.findFirst({
-          where: { alumnoId: id, activo: true },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true },
-        });
-
-        if (!inscripcion) {
+        if (!inscripcionActual) {
           throw new NotFoundException(
-            `El alumno con id ${id} no tiene una inscripciÃ³n activa`,
+            `El alumno con id ${id} no tiene una inscripción activa`,
           );
         }
 
         await tx.alumnoGrupo.update({
-          where: { id: inscripcion.id },
+          where: { id: inscripcionActual.id },
           data: {
             ...(turno !== undefined ? { turno } : {}),
             ...(fechaIngreso !== undefined

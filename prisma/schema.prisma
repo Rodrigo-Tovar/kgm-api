@@ -104,6 +104,8 @@ model AsignacionAcademica {
   materia      Materia        @relation(fields: [materiaId], references: [id], onUpdate: NoAction)
   calificacion Calificacion[]
 
+  @@unique([escuelaId, cicloId, grupoId, materiaId], map: "asignacionacademica_escuelaid_cicloid_grupoid_materiaid_key")
+  @@index([docenteId])
   @@map("asignacionacademica")
 }
 
@@ -132,6 +134,7 @@ model CicloEscolar {
   fechaInicio         DateTime              @map("fechainicio") @db.Date
   fechaFin            DateTime              @map("fechafin") @db.Date
   nombre              String?               @db.VarChar(100)
+  estado              String                @default("Programado") @db.VarChar(50)
   createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
   alumnogrupo         AlumnoGrupo[]
   asignacionacademica AsignacionAcademica[]
@@ -239,6 +242,8 @@ model Grupo {
   escuelaId           Int                   @map("escuelaid")
   gradoId             Int                   @map("gradoid")
   nombre              String                @db.VarChar(50)
+  turno               String?               @db.VarChar(50)
+  capacidad           Int                   @default(30)
   createdAt           DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
   alumnogrupo         AlumnoGrupo[]
   asignacionacademica AsignacionAcademica[]
