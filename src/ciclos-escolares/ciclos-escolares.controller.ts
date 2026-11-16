@@ -19,9 +19,16 @@ export class CiclosEscolaresController {
     @Get()
     async listar(
         @Param('escuelaId', ParseIntPipe) escuelaId: number,
+        @Query('pagina') pagina?: number,
+        @Query('limite') limite?: number,
         @Query('estado') estado?: string,
     ) {
-        return this.ciclosService.listar(escuelaId, estado);
+        return this.ciclosService.listarPaginado(
+            escuelaId,
+            Number(pagina) || 1,
+            Number(limite) || 10,
+            estado,
+        );
     }
 
     @Post()
