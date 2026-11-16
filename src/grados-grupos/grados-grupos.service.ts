@@ -11,8 +11,22 @@ import { CrearGrupoDto } from './dto/crear-grupo.dto';
 export class GradosGruposService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // 1. Listar todos los grados con el conteo de grupos
+  private async validarEscuela(escuelaId: number) {
+    const escuela = await this.prisma.escuela.findUnique({
+      where: { id: escuelaId },
+      select: { id: true },
+    });
+
+    if (!escuela) {
+      throw new NotFoundException(`La escuela con ID ${escuelaId} no existe.`);
+    }
+  }
+
+  // --- GRADOS ---
+
   async listarGrados(escuelaId: number) {
+    await this.validarEscuela(escuelaId);
+
     return this.prisma.grado.findMany({
       where: { escuelaId },
       include: {
@@ -22,37 +36,56 @@ export class GradosGruposService {
     });
   }
 
-  // 2. Crear Grado (Acepta CrearGradoDto)
   async crearGrado(escuelaId: number, dto: CrearGradoDto) {
+    await this.validarEscuela(escuelaId);
+
+    const nombreLimpio = dto.nombre.trim();
+
     const existe = await this.prisma.grado.findFirst({
-      where: { escuelaId, nombre: dto.nombre.trim() },
+      where: {
+        escuelaId,
+        nombre: { equals: nombreLimpio, mode: 'insensitive' },
+      },
     });
 
     if (existe) {
-      throw new ConflictException(`El grado "${dto.nombre}" ya existe.`);
+      throw new ConflictException(`El grado "${nombreLimpio}" ya existe en esta escuela.`);
     }
 
     return this.prisma.grado.create({
       data: {
         escuelaId,
-        nombre: dto.nombre.trim(),
+        nombre: nombreLimpio,
       },
     });
   }
 
-  // 3. Listar Grupos por Grado (Cálculo de alumnos y docente)
+  // --- GRUPOS ---
+
   async listarGruposPorGrado(
     escuelaId: number,
     gradoId: number,
     cicloId?: number,
   ) {
+    await this.validarEscuela(escuelaId);
+
+    const grado = await this.prisma.grado.findFirst({
+      where: { id: gradoId, escuelaId },
+    });
+
+    if (!grado) {
+      throw new NotFoundException(`El grado con ID ${gradoId} no fue encontrado.`);
+    }
+
     const grupos = await this.prisma.grupo.findMany({
       where: { escuelaId, gradoId },
       include: {
         grado: true,
         _count: {
           select: {
-            alumnogrupo: cicloId ? { where: { cicloId } } : true,
+            alumnogrupo: cicloId
+              ? { where: { cicloId, activo: true } }
+              : { where: { activo: true } },
           },
         },
       },
@@ -63,29 +96,37 @@ export class GradosGruposService {
       id: g.id,
       nombre: g.nombre,
       turno: g.turno || 'Sin turno',
+      capacidad: g.capacidad,
       grado: g.grado.nombre,
       alumnosAsignados: g._count.alumnogrupo,
       docenteAsignado: 'Sin docente asignado',
     }));
   }
 
-  // 4. Crear Grupo (Acepta CrearGrupoDto)
   async crearGrupo(escuelaId: number, dto: CrearGrupoDto) {
+    await this.validarEscuela(escuelaId);
+
     const grado = await this.prisma.grado.findFirst({
       where: { id: dto.gradoId, escuelaId },
     });
 
     if (!grado) {
-      throw new NotFoundException(`El grado con ID ${dto.gradoId} no existe.`);
+      throw new NotFoundException(`El grado con ID ${dto.gradoId} no existe en esta escuela.`);
     }
 
+    const nombreLimpio = dto.nombre.trim();
+
     const existeGrupo = await this.prisma.grupo.findFirst({
-      where: { escuelaId, gradoId: dto.gradoId, nombre: dto.nombre.trim() },
+      where: {
+        escuelaId,
+        gradoId: dto.gradoId,
+        nombre: { equals: nombreLimpio, mode: 'insensitive' },
+      },
     });
 
     if (existeGrupo) {
       throw new ConflictException(
-        `Ya existe el grupo "${dto.nombre}" en este grado.`,
+        `Ya existe el grupo "${nombreLimpio}" asignado al grado "${grado.nombre}".`,
       );
     }
 
@@ -93,8 +134,9 @@ export class GradosGruposService {
       data: {
         escuelaId,
         gradoId: dto.gradoId,
-        nombre: dto.nombre.trim(),
-        turno: dto.turno,
+        nombre: nombreLimpio,
+        turno: dto.turno?.trim(),
+        capacidad: dto.capacidad ?? 30,
       },
     });
   }
