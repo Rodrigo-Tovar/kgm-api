@@ -12,6 +12,7 @@ import { MateriasModule } from './materias/materias.module';
 import { AsignacionesAcademicasModule } from './asignaciones-academicas/asignaciones-academicas.module';
 import { DocumentosModule } from './documentos/documentos.module';
 import { CiclosEscolaresModule } from './ciclos-escolares/ciclos-escolares.module';
+import { GradosGruposModule } from './grados-grupos/grados-grupos.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { CiclosEscolaresModule } from './ciclos-escolares/ciclos-escolares.modul
     AsignacionesAcademicasModule,
     DocumentosModule,
     ReportesModule,
-    CiclosEscolaresModule
+    CiclosEscolaresModule,
+    GradosGruposModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
