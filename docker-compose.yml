@@ -39,11 +39,14 @@ services:
     container_name: kgm-api
     restart: unless-stopped
     init: true
-    command: sh -c "npx prisma generate && npm run start:dev"
+    command: sh -c "npx prisma generate && npm run prisma:deploy && npm run start:dev"
     ports:
       - "${API_PORT:-3000}:3000"
     environment:
       PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-}
+      ADMIN_BOOTSTRAP_SECRET: ${ADMIN_BOOTSTRAP_SECRET:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-kgm}:${POSTGRES_PASSWORD:-kgm}@db:5432/${POSTGRES_DB:-kgm}?schema=public
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"

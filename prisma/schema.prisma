@@ -17,6 +17,7 @@ model Administrador {
   usuarioId Int       @unique @map("usuarioid")
   nombre    String    @db.VarChar(255)
   telefono  String?   @db.VarChar(50)
+  fotoUrl   String?   @map("fotourl")
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   escuela   Escuela   @relation(fields: [escuelaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
