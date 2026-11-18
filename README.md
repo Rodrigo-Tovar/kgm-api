@@ -213,3 +213,7 @@ docker compose exec api npm run prisma:seed
 ```
 
 La seed no crea usuarios ni contraseñas. El volumen conserva la cuenta local al detener o reiniciar Docker; `docker compose down -v` elimina permanentemente la base y esa cuenta.
+
+## HU 2.5: asignación de alumnos
+
+Cada alumno puede tener como máximo una asignación activa, sin importar el ciclo escolar. La API responde `409 Conflict` si se intenta asignarlo de nuevo, y un índice único parcial en PostgreSQL protege también contra solicitudes simultáneas. La migración conserva las filas existentes como historial: si había varias activas, mantiene activa la más reciente y marca las anteriores como inactivas. Para volver a asignar al alumno, primero debe cerrarse su asignación activa.
