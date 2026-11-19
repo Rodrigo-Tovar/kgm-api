@@ -13,7 +13,11 @@ import { PrismaService } from '../prisma/prisma.service';
 type DocenteConAsignaciones = Prisma.DocenteGetPayload<{
   include: {
     asignacionacademica: {
-      include: { grupo: { include: { grado: true } }; ciclo: true };
+      include: {
+        grupo: { include: { grado: true } };
+        ciclo: true;
+        materia: true;
+      };
     };
   };
 }>;
@@ -34,7 +38,11 @@ export class DocentesService {
         asignacionacademica: {
           where: { activo: true },
           orderBy: { createdAt: 'desc' },
-          include: { grupo: { include: { grado: true } }, ciclo: true },
+          include: {
+            grupo: { include: { grado: true } },
+            ciclo: true,
+            materia: true,
+          },
         },
       },
       orderBy: [{ apellidoPaterno: 'asc' }, { nombre: 'asc' }],
@@ -51,7 +59,11 @@ export class DocentesService {
         asignacionacademica: {
           where: { activo: true },
           orderBy: { createdAt: 'desc' },
-          include: { grupo: { include: { grado: true } }, ciclo: true },
+          include: {
+            grupo: { include: { grado: true } },
+            ciclo: true,
+            materia: true,
+          },
         },
       },
     });
@@ -105,7 +117,11 @@ export class DocentesService {
         include: {
           asignacionacademica: {
             where: { activo: true },
-            include: { grupo: { include: { grado: true } }, ciclo: true },
+            include: {
+              grupo: { include: { grado: true } },
+              ciclo: true,
+              materia: true,
+            },
           },
         },
       });
@@ -152,10 +168,7 @@ export class DocentesService {
           where: {
             escuelaId,
             id: { not: id },
-            OR: [
-              ...(curp ? [{ curp }] : []),
-              ...(correo ? [{ correo }] : []),
-            ],
+            OR: [...(curp ? [{ curp }] : []), ...(correo ? [{ correo }] : [])],
           },
           select: { id: true },
         });
@@ -255,7 +268,8 @@ export class DocentesService {
         .filter(Boolean)
         .join(' '),
       curp: docente.curp,
-      fechaNacimiento: docente.fechaNacimiento?.toISOString().slice(0, 10) ?? null,
+      fechaNacimiento:
+        docente.fechaNacimiento?.toISOString().slice(0, 10) ?? null,
       estado: docente.estado === 'INACTIVO' ? 'Inactivo' : 'Activo',
       telefono: docente.telefono,
       correo: docente.correo,
@@ -265,6 +279,21 @@ export class DocentesService {
         ? `${asignacion.grupo.grado.nombre} ${asignacion.grupo.nombre}`
         : null,
       ciclo: asignacion?.ciclo.nombre ?? 'Sin ciclo asignado',
+      asignaciones: docente.asignacionacademica.map((carga) => ({
+        id: carga.id,
+        cicloId: carga.cicloId,
+        cicloEscolar:
+          carga.ciclo.nombre ??
+          `${carga.ciclo.fechaInicio.getUTCFullYear()}-${carga.ciclo.fechaFin.getUTCFullYear()}`,
+        grupoId: carga.grupoId,
+        grupo: carga.grupo.nombre,
+        gradoId: carga.grupo.gradoId,
+        grado: carga.grupo.grado.nombre,
+        materiaId: carga.materiaId,
+        materia: carga.materia.nombre,
+        claveMateria: carga.materia.clave,
+        activo: carga.activo ?? false,
+      })),
     };
   }
 }

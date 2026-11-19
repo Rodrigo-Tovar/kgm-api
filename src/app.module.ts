@@ -7,7 +7,12 @@ import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AlumnosModule } from './alumnos/alumnos.module';
 import { DocentesModule } from './docentes/docentes.module';
+import { TutoresModule } from './tutores/tutores.module';
 import { MateriasModule } from './materias/materias.module';
+import { AsignacionesAcademicasModule } from './asignaciones-academicas/asignaciones-academicas.module';
+import { DocumentosModule } from './documentos/documentos.module';
+import { CiclosEscolaresModule } from './ciclos-escolares/ciclos-escolares.module';
+import { GradosGruposModule } from './grados-grupos/grados-grupos.module';
 
 @Module({
   imports: [
@@ -15,8 +20,13 @@ import { MateriasModule } from './materias/materias.module';
     PrismaModule,
     AlumnosModule,
     DocentesModule,
+    TutoresModule,
     MateriasModule,
+    AsignacionesAcademicasModule,
+    DocumentosModule,
     ReportesModule,
+    CiclosEscolaresModule,
+    GradosGruposModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

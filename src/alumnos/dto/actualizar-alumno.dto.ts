@@ -2,19 +2,29 @@ import {
   IsDateString,
   IsEmail,
   IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
 } from 'class-validator';
 
 export class ActualizarAlumnoDto {
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @Matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]*$/, {
+    message: 'El nombre contiene caracteres no válidos.',
+  })
   @MaxLength(100)
   nombre?: string;
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @Matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]*$/, {
+    message: 'El apellido paterno contiene caracteres no válidos.',
+  })
   @MaxLength(100)
   apellidoPaterno?: string;
 
@@ -29,6 +39,10 @@ export class ActualizarAlumnoDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @Matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]*$/, {
+    message: 'La nacionalidad contiene caracteres no válidos.',
+  })
   @MaxLength(50)
   nacionalidad?: string;
 
@@ -43,7 +57,10 @@ export class ActualizarAlumnoDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(50)
+  @Matches(/^\d{10}$/, {
+    message: 'El teléfono debe contener 10 dígitos.',
+  })
+  @MaxLength(10)
   telefono?: string;
 
   @IsOptional()
@@ -53,7 +70,8 @@ export class ActualizarAlumnoDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['Matutino', 'Vespertino', 'Nocturno'])
+  @IsNotEmpty()
+  @IsIn(['Matutino', 'Vespertino'])
   turno?: string;
 
   @IsOptional()
@@ -62,5 +80,6 @@ export class ActualizarAlumnoDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   observaciones?: string;
 }
