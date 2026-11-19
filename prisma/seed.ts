@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PasswordService } from '../src/auth/password.service';
 import { PrismaClient } from '../src/generated/prisma/client';
 
 const connectionString = process.env.DATABASE_URL;
@@ -13,6 +14,13 @@ const prisma = new PrismaClient({
 });
 
 const fecha = (valor: string) => new Date(`${valor}T00:00:00.000Z`);
+
+// Cuenta de demostración para QA. La seed la crea o actualiza en la escuela DEV-001.
+const administradorSemilla = {
+  nombre: 'Leonardo Flores Leyva',
+  email: 'leonardo.flores.leyva@kgm-demo.test',
+  password: 'Tigre-Planeta-23711174!',
+};
 
 async function main() {
   const escuela = await prisma.escuela.findFirst({
@@ -492,7 +500,7 @@ async function main() {
         data: {
           escuelaId: escuelaDesarrollo.id,
           grupoId: grupo.id,
-          activo: true,
+          activo: false,
           createdAt: fechaCreacionCicloAnterior,
         },
       });
@@ -503,7 +511,7 @@ async function main() {
           alumnoId: alumno.id,
           grupoId: grupo.id,
           cicloId: cicloAnterior.id,
-          activo: true,
+          activo: false,
           turno: 'Matutino',
           fechaIngreso: fecha('2025-08-25'),
           createdAt: fechaCreacionCicloAnterior,
@@ -630,7 +638,75 @@ async function main() {
     indiceAlumno += 1;
   }
 
+  const correoAdministrador = administradorSemilla.email.toLocaleLowerCase();
+  const passwordAdministrador = await new PasswordService().hash(
+    administradorSemilla.password,
+  );
+
+  await prisma.$transaction(async (tx) => {
+    const usuarioAdministrador = await tx.usuario.findFirst({
+      where: {
+        email: { equals: correoAdministrador, mode: 'insensitive' },
+      },
+      include: { administrador: true },
+    });
+
+    if (
+      usuarioAdministrador &&
+      usuarioAdministrador.escuelaId !== escuelaDesarrollo.id
+    ) {
+      throw new Error(
+        `El correo ${correoAdministrador} ya pertenece a otra escuela; no se modificó.`,
+      );
+    }
+    if (
+      usuarioAdministrador &&
+      usuarioAdministrador.rol !== 'ADMINISTRADOR'
+    ) {
+      throw new Error(
+        `El correo ${correoAdministrador} ya está vinculado a un usuario ${usuarioAdministrador.rol}; no se modificó.`,
+      );
+    }
+
+    const usuario = usuarioAdministrador
+      ? await tx.usuario.update({
+          where: { id: usuarioAdministrador.id },
+          data: {
+            email: correoAdministrador,
+            password: passwordAdministrador,
+            rol: 'ADMINISTRADOR',
+          },
+        })
+      : await tx.usuario.create({
+          data: {
+            escuelaId: escuelaDesarrollo.id,
+            email: correoAdministrador,
+            password: passwordAdministrador,
+            rol: 'ADMINISTRADOR',
+          },
+        });
+
+    if (usuarioAdministrador?.administrador) {
+      await tx.administrador.update({
+        where: { id: usuarioAdministrador.administrador.id },
+        data: {
+          escuelaId: escuelaDesarrollo.id,
+          nombre: administradorSemilla.nombre,
+        },
+      });
+    } else {
+      await tx.administrador.create({
+        data: {
+          escuelaId: escuelaDesarrollo.id,
+          usuarioId: usuario.id,
+          nombre: administradorSemilla.nombre,
+        },
+      });
+    }
+  });
+
   console.log(`Seed de desarrollo completada para escuela ${escuelaDesarrollo.id}.`);
+  console.log(`Administrador de demostración listo: ${correoAdministrador}.`);
   console.log(
     `${docentes.size} docentes, ${alumnos.size} alumnos, ${tutores.size} tutores, ` +
       `${grados.size} grados, ${grupos.size} grupos, ${ciclos.size} ciclos y ` +

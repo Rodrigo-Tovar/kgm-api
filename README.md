@@ -109,7 +109,7 @@ Las fotos JPG, PNG y WebP de hasta 2 MB se guardan en el volumen Docker `kgm-api
 
 ## Datos de desarrollo
 
-La seed crea o actualiza datos de demostración para la escuela `DEV-001`: ciclos, grados, grupos, materias, docentes, alumnos, tutores, inscripciones, asignaciones académicas, expedientes y calificaciones de dos bimestres. No crea usuarios ni contraseñas y no elimina registros.
+La seed crea o actualiza datos de demostración para la escuela `DEV-001`: ciclos, grados, grupos, materias, docentes, alumnos, tutores, inscripciones, asignaciones académicas, expedientes, calificaciones de dos bimestres y el usuario administrador de demostración documentado más abajo. No elimina registros; al repetirla se restablece la contraseña de ese administrador para que las credenciales documentadas sigan funcionando.
 
 Con el stack levantado y el esquema actualizado, ejecútala manualmente:
 
@@ -193,8 +193,10 @@ prisma/
 
 - Nombre: Leonardo Flores Leyva
 - Correo: `leonardo.flores.leyva@kgm-demo.test` (dominio reservado para pruebas; no recibe correo)
-- Rol: `ADMINISTRADOR`, escuela local `1`
+- Rol: `ADMINISTRADOR`, escuela `DEV-001` (normalmente id `1` en una base vacía)
 - Contraseña: `Tigre-Planeta-23711174!`
+
+Esta misma cuenta es la que crea o actualiza la seed en `DEV-001`, así que QA puede iniciar sesión sin pasar por el bootstrap.
 
 ### Ejecutar el proyecto local
 
@@ -212,7 +214,7 @@ Abre el frontend en `http://localhost:5173`. Si necesitas datos de demostración
 docker compose exec api npm run prisma:seed
 ```
 
-La seed no crea usuarios ni contraseñas. El volumen conserva la cuenta local al detener o reiniciar Docker; `docker compose down -v` elimina permanentemente la base y esa cuenta.
+La seed sí crea o actualiza la cuenta local de demostración. El volumen conserva los datos al detener o reiniciar Docker; `docker compose down -v` elimina permanentemente la base y esa cuenta, pero volver a ejecutar la seed la recrea.
 
 ## HU 2.5: asignación de alumnos
 
