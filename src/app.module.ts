@@ -13,6 +13,8 @@ import { AsignacionesAcademicasModule } from './asignaciones-academicas/asignaci
 import { DocumentosModule } from './documentos/documentos.module';
 import { CiclosEscolaresModule } from './ciclos-escolares/ciclos-escolares.module';
 import { GradosGruposModule } from './grados-grupos/grados-grupos.module';
+import { AuthModule } from './auth/auth.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { GradosGruposModule } from './grados-grupos/grados-grupos.module';
     ReportesModule,
     CiclosEscolaresModule,
     GradosGruposModule,
+    AuthModule,
+    UsuariosModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

@@ -301,6 +301,22 @@ export class AlumnosService {
       );
     }
 
+    const asignacionActiva = await this.prisma.alumnoGrupo.findFirst({
+      where: { alumnoId, escuelaId, activo: true },
+      include: {
+        grupo: { include: { grado: true } },
+        ciclo: true,
+      },
+    });
+    if (asignacionActiva) {
+      const cicloActual =
+        asignacionActiva.ciclo.nombre ??
+        `${asignacionActiva.ciclo.fechaInicio.getUTCFullYear()}-${asignacionActiva.ciclo.fechaFin.getUTCFullYear()}`;
+      throw new ConflictException(
+        `El alumno ya tiene una asignación activa en ${asignacionActiva.grupo.grado.nombre} ${asignacionActiva.grupo.nombre} para el ciclo ${cicloActual}. Solo puede tener una asignación activa a la vez.`,
+      );
+    }
+
     const ciclo = await this.prisma.cicloEscolar.findFirst({
       where: { id: dto.cicloId, escuelaId },
       select: { id: true },
@@ -365,7 +381,7 @@ export class AlumnosService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          'El alumno ya tiene una asignaciÃ³n registrada para ese ciclo escolar.',
+          'El alumno ya tiene una asignación activa o un registro previo para ese ciclo escolar.',
         );
       }
       throw error;
